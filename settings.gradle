@@ -1,0 +1,4 @@
+rootProject.name = 'tiny-http'
+include 'server'
+include 'exampleapp'
+
