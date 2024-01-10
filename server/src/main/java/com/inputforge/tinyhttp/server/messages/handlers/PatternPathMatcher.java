@@ -12,6 +12,11 @@ public class PatternPathMatcher implements PathMatcher {
     }
 
     @Override
+    public String prefix() {
+        return pattern.substring(0, pattern.indexOf('*'));
+    }
+
+    @Override
     public boolean matches(String path) {
         return regex.matcher(path).matches();
     }

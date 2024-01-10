@@ -118,7 +118,7 @@ class HttpServerTest {
     void testIncompleteHttpRequest() throws IOException {
         try (
                 var socket = new Socket(InetAddress.getLoopbackAddress(), port);
-                var outputStream = socket.getOutputStream();
+                var outputStream = socket.getOutputStream()
         ) {
             outputStream.write("GET / HTTP\r\n".getBytes());
             outputStream.write("Host: localhost\r\n".getBytes());
@@ -252,24 +252,24 @@ class HttpServerTest {
                     .build(), HttpResponse.BodyHandlers.ofString());
             assertEquals(200, response.statusCode());
             assertEquals("<html><body>Hello World!</body></html>", response.body());
-            assertEquals("text/html", response.headers().firstValue("Content-Type").get());
-            assertEquals("38", response.headers().firstValue("Content-Length").get());
+            assertEquals("text/html", response.headers().firstValue("Content-Type").orElseThrow());
+            assertEquals("38", response.headers().firstValue("Content-Length").orElseThrow());
 
             response = client.send(HttpRequest.newBuilder()
                     .uri(URI.create("http://localhost:" + server.port() + "/files/test.txt"))
                     .build(), HttpResponse.BodyHandlers.ofString());
             assertEquals(200, response.statusCode());
             assertEquals("Hello World!", response.body());
-            assertEquals("text/plain", response.headers().firstValue("Content-Type").get());
-            assertEquals("12", response.headers().firstValue("Content-Length").get());
+            assertEquals("text/plain", response.headers().firstValue("Content-Type").orElseThrow());
+            assertEquals("12", response.headers().firstValue("Content-Length").orElseThrow());
 
             response = client.send(HttpRequest.newBuilder()
                     .uri(URI.create("http://localhost:" + server.port() + "/files/subdir/"))
                     .build(), HttpResponse.BodyHandlers.ofString());
             assertEquals(200, response.statusCode());
             assertEquals("<html><body>Hello Subdir!</body></html>", response.body());
-            assertEquals("text/html", response.headers().firstValue("Content-Type").get());
-            assertEquals("39", response.headers().firstValue("Content-Length").get());
+            assertEquals("text/html", response.headers().firstValue("Content-Type").orElseThrow());
+            assertEquals("39", response.headers().firstValue("Content-Length").orElseThrow());
 
             response = client.send(HttpRequest.newBuilder()
                     .uri(URI.create("http://localhost:" + server.port() + "/files/does-not-exist"))

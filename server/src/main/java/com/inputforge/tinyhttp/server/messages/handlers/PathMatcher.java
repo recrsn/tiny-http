@@ -18,5 +18,7 @@ public interface PathMatcher {
         return new PrefixPathMatcher(prefix);
     }
 
+    String prefix();
+
     boolean matches(String path);
 }

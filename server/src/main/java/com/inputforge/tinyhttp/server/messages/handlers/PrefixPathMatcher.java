@@ -8,6 +8,11 @@ public class PrefixPathMatcher implements PathMatcher {
     }
 
     @Override
+    public String prefix() {
+        return prefix;
+    }
+
+    @Override
     public boolean matches(String path) {
         return path.startsWith(prefix);
     }

@@ -19,6 +19,6 @@ public class RouterBuilder {
     }
 
     public Router build() {
-        return new Router(routes);
+        return new PrefixTreeRouter(routes);
     }
 }

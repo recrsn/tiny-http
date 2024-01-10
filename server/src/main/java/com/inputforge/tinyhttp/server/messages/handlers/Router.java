@@ -7,21 +7,17 @@ import com.inputforge.tinyhttp.server.messages.Response;
 
 import java.util.List;
 
-public class Router implements RequestHandler {
-    private final List<Route> routes;
-
-    public Router(List<Route> routes) {
-        this.routes = routes;
-    }
-
+public abstract class Router implements RequestHandler {
     public static RouterBuilder builder() {
         return new RouterBuilder();
     }
 
+    public abstract List<Route> findCandidateRoutes(String path);
+
     @Override
     public Response handle(Request request) {
         boolean hasPathMatch = false;
-        for (var route : routes) {
+        for (var route : findCandidateRoutes(request.path())) {
             var matcher = route.matcher();
             if (matcher.matches(request.path())) {
                 hasPathMatch = true;

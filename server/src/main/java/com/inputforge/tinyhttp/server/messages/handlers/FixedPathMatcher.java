@@ -8,6 +8,11 @@ public class FixedPathMatcher implements PathMatcher {
     }
 
     @Override
+    public String prefix() {
+        return path;
+    }
+
+    @Override
     public boolean matches(String path) {
         return path.equals(this.path);
     }
