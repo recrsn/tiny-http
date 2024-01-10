@@ -5,6 +5,10 @@ public record Response(
         HeaderBag headers,
         ResponseBody body
 ) {
+
+    public Response(ResponseBody body) {
+        this(HttpStatus.OK, HeaderBag.empty(), body);
+    }
     public Response(HttpStatus status) {
         this(status, HeaderBag.empty(), ResponseBody.empty());
     }

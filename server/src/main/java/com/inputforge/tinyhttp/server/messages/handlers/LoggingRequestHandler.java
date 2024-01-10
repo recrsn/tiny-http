@@ -20,6 +20,10 @@ public class LoggingRequestHandler implements RequestHandler {
         return new LoggingRequestHandler(System.out, router);
     }
 
+    public static RequestHandler wrap(PrintStream logger, RequestHandler router) {
+        return new LoggingRequestHandler(logger, router);
+    }
+
     @Override
     public Response handle(Request request) {
         var response = handler.handle(request);

@@ -11,20 +11,36 @@ import java.io.InputStream;
 public class ChunkedInputStream extends FilterInputStream {
 
     private HeaderBag trailers = null;
-    private long currentChunkSize = -1;
+    private long currentChunkSize = 0;
+    private boolean finished = false;
 
     public ChunkedInputStream(InputStream in) {
         super(in);
     }
 
     @Override
+    public int read() throws IOException {
+        byte[] buffer = new byte[1];
+        int read = read(buffer);
+        if (read == -1) {
+            return -1;
+        }
+        return buffer[0] & 0xFF;
+    }
+
+    @Override
+    public int read(byte[] b) throws IOException {
+        return read(b, 0, b.length);
+    }
+
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        if (currentChunkSize == -1) {
-            readChunkSize();
+        if (finished) {
+            return -1;
         }
 
         if (currentChunkSize == 0) {
-            return -1;
+            readChunkSize();
         }
 
         len = (int) Math.min(len, currentChunkSize);
@@ -32,34 +48,48 @@ public class ChunkedInputStream extends FilterInputStream {
         if (result != -1) {
             currentChunkSize -= result;
         }
+
+        if (currentChunkSize == 0 && !finished) {
+            // read \r\n at the end of the chunk
+            int b1 = in.read();
+            int b2 = in.read();
+
+            if (b1 == -1 || b2 == -1) {
+                throw new ChunkedEncodingException("Unexpected end of stream");
+            }
+            if (b1 != '\r' || b2 != '\n') {
+                throw new ChunkedEncodingException("Invalid chunk");
+            }
+        }
+
         return result;
     }
 
     private void readChunkSize() throws IOException {
         currentChunkSize = 0;
-        byte[] buffer = new byte[1024];
         int readIndex;
         int read;
         boolean chunkSizeRead = false;
+        byte[] buffer = new byte[1024];
 
         do {
-            read = super.read(buffer);
+            in.mark(buffer.length + 1);
+            read = in.read(buffer);
 
             if (read == -1) {
-                throw new ChunkedEncodingException("Chunked input stream ended unexpectedly");
+                throw new ChunkedEncodingException("Unexpected end of stream");
             }
 
             readIndex = 0;
 
             while (readIndex < read && buffer[readIndex] != '\r') {
                 if (!chunkSizeRead) {
-                    currentChunkSize *= 16;
                     if (buffer[readIndex] >= '0' && buffer[readIndex] <= '9') {
-                        currentChunkSize += buffer[readIndex] - '0';
+                        currentChunkSize = currentChunkSize * 16 + buffer[readIndex] - '0';
                     } else if (buffer[readIndex] >= 'a' && buffer[readIndex] <= 'f') {
-                        currentChunkSize += buffer[readIndex] - 'a' + 10;
+                        currentChunkSize = currentChunkSize * 16 + buffer[readIndex] - 'a' + 10;
                     } else if (buffer[readIndex] >= 'A' && buffer[readIndex] <= 'F') {
-                        currentChunkSize += buffer[readIndex] - 'A' + 10;
+                        currentChunkSize = currentChunkSize * 16 + buffer[readIndex] - 'A' + 10;
                     } else if (buffer[readIndex] == ';') {
                         chunkSizeRead = true;
                     } else {
@@ -71,22 +101,34 @@ public class ChunkedInputStream extends FilterInputStream {
             }
         } while (readIndex == read);
 
-        read = super.read();
+        in.reset();
+        in.skipNBytes(readIndex + 1);
 
-        if (read == -1) {
-            throw new ChunkedEncodingException("Chunked input stream ended unexpectedly");
+        // Check for \n at the end of the chunk size
+        int b = in.read();
+
+        if (b == -1) {
+            throw new ChunkedEncodingException("Unexpected end of stream");
         }
-        if (read != '\n') {
-            throw new ChunkedEncodingException("Invalid chunk size");
+        if (b != '\n') {
+            throw new ChunkedEncodingException("Invalid chunk header");
         }
+
 
         if (currentChunkSize == 0) {
             // read trailer
+            finished = true;
             readTrailers();
         }
     }
 
     private void readTrailers() throws IOException {
+        in.mark(1);
+        int b = in.read();
+        if (b == -1) {
+            return;
+        }
+        in.reset();
         trailers = HttpFieldParser.parseHttpFields(super.in);
     }
 

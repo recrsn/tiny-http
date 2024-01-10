@@ -3,6 +3,7 @@ package com.inputforge.tinyhttp.server.messages;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.function.Consumer;
 
 public interface ResponseBody {
     static ResponseBody of(byte[] body) {
@@ -11,6 +12,14 @@ public interface ResponseBody {
 
     static ResponseBody of(String body) {
         return ResponseBody.of(body.getBytes());
+    }
+
+    static ResponseBody of(InputStream inputStream) {
+        return outputStream -> {
+            try (inputStream) {
+                inputStream.transferTo(outputStream);
+            }
+        };
     }
 
     static ResponseBody of(InputStream inputStream, long streamSize) {
@@ -40,6 +49,10 @@ public interface ResponseBody {
             public void writeTo(OutputStream outputStream) {
             }
         };
+    }
+
+    static ResponseBody streaming(Consumer<OutputStream> outputStreamConsumer) {
+        return outputStreamConsumer::accept;
     }
 
     default long getContentLength() {

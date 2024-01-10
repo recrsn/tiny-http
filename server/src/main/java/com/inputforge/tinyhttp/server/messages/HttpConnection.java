@@ -1,9 +1,6 @@
 package com.inputforge.tinyhttp.server.messages;
 
-import com.inputforge.tinyhttp.server.messages.io.ChunkedInputStream;
-import com.inputforge.tinyhttp.server.messages.io.ChunkedOutputStream;
-import com.inputforge.tinyhttp.server.messages.io.LimitedInputStream;
-import com.inputforge.tinyhttp.server.messages.io.UncloseableInputStream;
+import com.inputforge.tinyhttp.server.messages.io.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,7 +103,7 @@ public class HttpConnection implements Closeable {
             }
 
             if (state != ParseState.HEADER) {
-                throw new RequestEntityTooLargeException();
+                throw new ContentTooLargeException();
             }
 
 
@@ -196,21 +193,22 @@ public class HttpConnection implements Closeable {
             headers.set("Transfer-Encoding", "chunked");
         }
 
+        var responseOutputStream = new UncloseableOutputStream(outputStream);
 
-        outputStream.write(
+        responseOutputStream.write(
                 ("HTTP/1.1 %d %s\r\n".formatted(status.code(), status.message())).getBytes());
 
         for (var header : headers.all().entrySet()) {
-            outputStream.write(
+            responseOutputStream.write(
                     ("%s: %s\r\n".formatted(header.getKey(), header.getValue())).getBytes());
         }
 
-        outputStream.write("\r\n".getBytes());
+        responseOutputStream.write("\r\n".getBytes());
 
         if (contentLength >= 0) {
-            body.writeTo(outputStream);
+            body.writeTo(responseOutputStream);
         } else {
-            var chunkedOutputStream = new ChunkedOutputStream(outputStream);
+            var chunkedOutputStream = new ChunkedOutputStream(responseOutputStream);
             body.writeTo(chunkedOutputStream);
             chunkedOutputStream.finish();
         }

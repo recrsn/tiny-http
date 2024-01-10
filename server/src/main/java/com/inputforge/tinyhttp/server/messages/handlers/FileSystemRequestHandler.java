@@ -14,11 +14,11 @@ public class FileSystemRequestHandler implements RequestHandler {
     private final String base;
 
     public FileSystemRequestHandler(String base, Path root) {
-        if (Files.isDirectory(root)) {
+        if (!Files.isDirectory(root)) {
             throw new IllegalArgumentException("root must be a directory");
         }
         this.base = base;
-        this.root = root;
+        this.root = root.normalize();
     }
 
     @Override
@@ -27,7 +27,7 @@ public class FileSystemRequestHandler implements RequestHandler {
             throw new NotFoundException();
         }
 
-        Path path = root.resolve(request.path().substring(base.length())).toAbsolutePath();
+        Path path = root.resolve("./" + request.path().substring(base.length())).toAbsolutePath();
 
         if (!path.startsWith(root)) {
             // Prevent path traversal

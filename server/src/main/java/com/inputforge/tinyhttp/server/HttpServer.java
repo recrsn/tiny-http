@@ -20,10 +20,10 @@ import java.util.concurrent.ExecutorService;
 public class HttpServer {
     private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
     private final InetAddress listenAddress;
-    private final int port;
     private final ExecutorService executorService;
     private final ExceptionHandler exceptionHandler;
     private final RequestHandler requestHandler;
+    private int port;
     private volatile boolean running = false;
 
     public HttpServer(InetAddress listenAddress, int port, ExecutorService executorService, ExceptionHandler exceptionHandler, RequestHandler requestHandler) {
@@ -41,6 +41,7 @@ public class HttpServer {
     public void start() throws IOException {
         running = true;
         try (ServerSocket serverSocket = new ServerSocket(port, 0, listenAddress)) {
+            port = serverSocket.getLocalPort();
             logger.info("Listening on {}:{}", listenAddress, port);
             while (running) {
                 Socket socket = serverSocket.accept();
@@ -64,15 +65,17 @@ public class HttpServer {
                 Optional<Request> nextRequest;
                 try {
                     nextRequest = connection.nextRequest();
-                } catch (ResponseStatusException e) {
-                    // Only handle recoverable errors here
+                } catch (Exception e) {
+                    // Treat any protocol-parsing error as unrecoverable
+                    // and close the connection
                     logger.error("Error while parsing request", e);
                     var response = exceptionHandler.handle(e);
                     connection.sendResponse(response);
-                    continue;
+                    break;
                 }
 
                 if (nextRequest.isEmpty()) {
+                    // No more requests, close the connection
                     break;
                 }
 
@@ -87,9 +90,11 @@ public class HttpServer {
     private Response handleRequest(Request request) {
         try {
             return requestHandler.handle(request);
-        } catch (Exception e) {
-            logger.error("Error while handling request", e);
+        } catch (ResponseStatusException e) {
             return exceptionHandler.handle(request, e);
+        } catch (Exception e) {
+            logger.error("Unexpected error while handling request", e);
+            return exceptionHandler.handle(e);
         }
     }
 
@@ -104,5 +109,9 @@ public class HttpServer {
     public void stop() {
         running = false;
         executorService.shutdown();
+    }
+
+    public int port() {
+        return port;
     }
 }

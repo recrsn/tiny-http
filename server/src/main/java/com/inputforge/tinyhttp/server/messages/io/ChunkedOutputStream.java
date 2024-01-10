@@ -24,7 +24,7 @@ public class ChunkedOutputStream extends FilterOutputStream {
             return;
         }
 
-        String hex = Integer.toHexString(len);
+        String hex = Integer.toHexString(len).toUpperCase();
         out.write(hex.getBytes());
         out.write("\r\n".getBytes());
         out.write(b, off, len);

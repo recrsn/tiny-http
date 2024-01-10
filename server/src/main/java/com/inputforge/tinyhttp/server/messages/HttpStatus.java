@@ -5,8 +5,9 @@ public enum HttpStatus {
     NOT_FOUND(404, "Not Found"),
     INTERNAL_SERVER_ERROR(500, "Internal Server Error"),
     BAD_REQUEST(400, "Bad Request"),
-    REQUEST_ENTITY_TOO_LARGE(413, "Request Entity Too Large"),
-    NO_CONTENT(204, "No content");
+    CONTENT_TOO_LARGE(413, "Content Too Large"),
+    NO_CONTENT(204, "No content"),
+    METHOD_NOT_ALLOWED(405, "Method Not Allowed");
 
     private final int code;
     private final String message;
@@ -14,15 +15,6 @@ public enum HttpStatus {
     HttpStatus(int code, String message) {
         this.code = code;
         this.message = message;
-    }
-
-    public static HttpStatus of(int code) {
-        for (HttpStatus status : values()) {
-            if (status.code == code) {
-                return status;
-            }
-        }
-        throw new IllegalArgumentException("Unknown status code: " + code);
     }
 
     public int code() {
