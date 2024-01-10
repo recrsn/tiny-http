@@ -1,4 +1,4 @@
-package com.inputforge.tinyhttp.server;
+package com.inputforge.tinyhttp.server.messages;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +24,10 @@ public class HeaderBag {
 
     public static HeaderBag of() {
         return new HeaderBag(new HashMap<>());
+    }
+
+    public static HeaderBag empty() {
+        return new HeaderBag(Map.of());
     }
 
     public String get(String name) {

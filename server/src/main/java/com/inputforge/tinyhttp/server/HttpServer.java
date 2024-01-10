@@ -1,5 +1,11 @@
 package com.inputforge.tinyhttp.server;
 
+import com.inputforge.tinyhttp.server.messages.HttpConnection;
+import com.inputforge.tinyhttp.server.messages.Request;
+import com.inputforge.tinyhttp.server.messages.Response;
+import com.inputforge.tinyhttp.server.messages.ResponseStatusException;
+import com.inputforge.tinyhttp.server.messages.handlers.ExceptionHandler;
+import com.inputforge.tinyhttp.server.messages.handlers.RequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,21 +14,24 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 public class HttpServer {
+    private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
     private final InetAddress listenAddress;
     private final int port;
-    private final RequestDispatcher requestDispatcher;
     private final ExecutorService executorService;
-    Logger logger = LoggerFactory.getLogger(HttpServer.class);
+    private final ExceptionHandler exceptionHandler;
+    private final RequestHandler requestHandler;
     private volatile boolean running = false;
 
-    public HttpServer(InetAddress listenAddress, int port, RequestDispatcher requestDispatcher, ExecutorService executorService) {
+    public HttpServer(InetAddress listenAddress, int port, ExecutorService executorService, ExceptionHandler exceptionHandler, RequestHandler requestHandler) {
         this.listenAddress = listenAddress;
         this.port = port;
-        this.requestDispatcher = requestDispatcher;
         this.executorService = executorService;
+        this.exceptionHandler = exceptionHandler;
+        this.requestHandler = requestHandler;
     }
 
     public static HttpServerBuilder builder() {
@@ -37,13 +46,57 @@ public class HttpServer {
                 Socket socket = serverSocket.accept();
                 logger.info("Incoming connection from {}", socket.getRemoteSocketAddress());
                 this.executorService.submit(() -> {
-                    try {
-                        requestDispatcher.handle(socket);
+                    try (socket) {
+                        handleConnection(socket);
+                        logger.info("Closing connection from {}", socket.getRemoteSocketAddress());
                     } catch (IOException e) {
                         logger.error("Error handling request", e);
                         throw new UncheckedIOException(e);
                     }
                 });
+            }
+        }
+    }
+
+    private void handleConnection(Socket socket) throws IOException {
+        try (var connection = new HttpConnection(socket)) {
+            while (true) {
+                Optional<Request> nextRequest;
+                try {
+                    nextRequest = connection.nextRequest();
+                } catch (ResponseStatusException e) {
+                    // Only handle recoverable errors here
+                    logger.error("Error while parsing request", e);
+                    var response = exceptionHandler.handle(e);
+                    connection.sendResponse(response);
+                    continue;
+                }
+
+                if (nextRequest.isEmpty()) {
+                    break;
+                }
+
+                var request = nextRequest.get();
+                var response = handleRequest(request);
+                connection.sendResponse(response);
+                drainRequest(request);
+            }
+        }
+    }
+
+    private Response handleRequest(Request request) {
+        try {
+            return requestHandler.handle(request);
+        } catch (Exception e) {
+            logger.error("Error while handling request", e);
+            return exceptionHandler.handle(request, e);
+        }
+    }
+
+    private void drainRequest(Request request) throws IOException {
+        try (var inputStream = request.body()) {
+            while (inputStream.read() != -1) {
+                // Drain the input stream, do nothing
             }
         }
     }

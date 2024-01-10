@@ -1,11 +1,11 @@
-package com.inputforge.tinyhttp.server;
+package com.inputforge.tinyhttp.server.messages;
 
 import java.io.InputStream;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.time.Instant;
 
 public record Request(
-        InetAddress remoteAddress,
+        InetSocketAddress remoteAddress,
         Instant timestamp,
         String method,
         String path,

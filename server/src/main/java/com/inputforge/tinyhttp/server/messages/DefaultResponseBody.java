@@ -1,4 +1,4 @@
-package com.inputforge.tinyhttp.server;
+package com.inputforge.tinyhttp.server.messages;
 
 import java.io.IOException;
 import java.io.OutputStream;

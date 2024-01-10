@@ -1,4 +1,4 @@
-package com.inputforge.tinyhttp.server;
+package com.inputforge.tinyhttp.server.messages;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,8 +1,9 @@
-package com.inputforge.tinyhttp.server;
+package com.inputforge.tinyhttp.server.messages.handlers;
+
+import com.inputforge.tinyhttp.server.messages.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class Router implements RequestHandler {
     private final List<Route> routes;

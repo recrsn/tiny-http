@@ -1,4 +1,4 @@
-package com.inputforge.tinyhttp.server;
+package com.inputforge.tinyhttp.server.messages;
 
 public class ResponseStatusException extends RuntimeException {
     private final HttpStatus httpStatus;

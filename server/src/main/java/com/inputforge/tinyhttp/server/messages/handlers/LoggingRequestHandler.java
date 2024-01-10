@@ -1,4 +1,7 @@
-package com.inputforge.tinyhttp.server;
+package com.inputforge.tinyhttp.server.messages.handlers;
+
+import com.inputforge.tinyhttp.server.messages.Request;
+import com.inputforge.tinyhttp.server.messages.Response;
 
 import java.io.PrintStream;
 import java.time.ZoneOffset;
@@ -22,7 +25,7 @@ public class LoggingRequestHandler implements RequestHandler {
         var response = handler.handle(request);
         var contentLength = response.body().getContentLength();
         logger.printf("%s - - [%s] \"%s %s %s\" %d %s%n",
-                request.remoteAddress().getHostAddress(),
+                request.remoteAddress().getAddress().getHostAddress(),
                 request.timestamp().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(
                         "dd/MMM/yyyy:HH:mm:ss Z")
                 ),

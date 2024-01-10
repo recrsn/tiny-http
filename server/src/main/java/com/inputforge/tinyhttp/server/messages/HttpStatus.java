@@ -1,11 +1,12 @@
-package com.inputforge.tinyhttp.server;
+package com.inputforge.tinyhttp.server.messages;
 
 public enum HttpStatus {
     OK(200, "OK"),
     NOT_FOUND(404, "Not Found"),
     INTERNAL_SERVER_ERROR(500, "Internal Server Error"),
     BAD_REQUEST(400, "Bad Request"),
-    REQUEST_ENTITY_TOO_LARGE(413, "Request Entity Too Large");
+    REQUEST_ENTITY_TOO_LARGE(413, "Request Entity Too Large"),
+    NO_CONTENT(204, "No content");
 
     private final int code;
     private final String message;

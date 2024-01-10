@@ -1,4 +1,4 @@
-package com.inputforge.tinyhttp.server;
+package com.inputforge.tinyhttp.server.messages;
 
 public class RequestEntityTooLargeException extends ResponseStatusException {
     public RequestEntityTooLargeException() {

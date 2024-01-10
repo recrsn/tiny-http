@@ -1,4 +1,7 @@
-package com.inputforge.tinyhttp.server;
+package com.inputforge.tinyhttp.server.messages.handlers;
+
+import com.inputforge.tinyhttp.server.messages.Request;
+import com.inputforge.tinyhttp.server.messages.Response;
 
 public class Route {
     private final String method;
